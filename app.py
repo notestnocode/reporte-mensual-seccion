@@ -1,23 +1,27 @@
 import streamlit as st
 import google.generativeai as genai
-import google.ai.generativelanguage as gapic
+from google.generativeai.types import RequestOptions
 
-# 1. Configuración del Sistema
-SYSTEM_PROMPT = "Actúa como el Asistente del Grupo 19 Paxtu. Ayuda a generar reportes en tablas de Markdown."
+# Configuración del Sistema
+SYSTEM_PROMPT = """Actúa como el Asistente del Grupo 19 Paxtu. 
+Tu objetivo es generar el Reporte Mensual mediante una charla. 
+Estructura el reporte en tablas de Markdown: Encabezado, Actividades, Membresía, Finanzas, Resumen Progresión, Detalle Progresión y Asuntos de Consejo."""
 
 st.set_page_config(page_title="Asistente Paxtu", page_icon="⚜️")
-st.title("🤖 Reporte de Sección - Grupo 19 Paxtu v0.0.2")
+st.title("🤖 Reporte de Sección - Grupo 19 Paxtu")
 
-# 2. Configuración de API
 if "GOOGLE_API_KEY" not in st.secrets:
-    st.error("Falta GOOGLE_API_KEY en Secrets.")
+    st.error("Configura GOOGLE_API_KEY en Secrets.")
     st.stop()
 
-# Forzamos la configuración de la librería
+# Configuración forzada
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
-# Usamos el nombre corto, que es el más aceptado por la versión estable
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Usamos una configuración de modelo más robusta
+model = genai.GenerativeModel(
+    model_name='gemini-1.5-flash',
+    system_instruction=SYSTEM_PROMPT
+)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -32,14 +36,16 @@ if prompt := st.chat_input("¿Listo para el reporte?"):
         st.markdown(prompt)
 
     try:
-        # Generar contenido de forma directa sin historial complejo para evitar el 404
-        response = model.generate_content(prompt)
+        # Forzamos a la API a usar la versión estable v1 para evitar el error 404
+        response = model.generate_content(
+            prompt,
+            request_options=RequestOptions(api_version='v1')
+        )
         
         with st.chat_message("assistant"):
             st.markdown(response.text)
-        
         st.session_state.messages.append({"role": "assistant", "content": response.text})
 
     except Exception as e:
-        st.error(f"Error: {str(e)}")
-        st.info("Tip: Verifica que tu API Key sea de un proyecto con Gemini API habilitado.")
+        st.error(f"Error detectado: {str(e)}")
+        st.info("Si el error persiste, genera una nueva API Key en Google AI Studio.")
