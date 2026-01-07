@@ -1,21 +1,23 @@
 import streamlit as st
 import google.generativeai as genai
 
-# Configuración del Agente (Aquí va tu prompt mejorado)
-SYSTEM_PROMPT = """Actúa como el Asistente del Grupo 19 Paxtu. 
-Tu objetivo es generar el Reporte Mensual mediante una charla. 
-Sigue este orden: Encabezado, Actividades, Membresía, Finanzas, Resumen Progresión, Detalle Progresión y Asuntos de Consejo.
-Al final, genera tablas en Markdown dentro de un bloque de código y permite que el usuario lo descargue."""
+# Configuración del Agente (Tu prompt del Grupo 19 Paxtu)
+SYSTEM_PROMPT = """Actúa como el Asistente Digital del Grupo Scout 19 Paxtu. 
+Tu objetivo es generar el Reporte Mensual de Sección mediante una charla.
+Estructura el reporte en tablas de Markdown: Encabezado, Actividades, Membresía, Finanzas, Resumen Progresión, Detalle Progresión y Asuntos de Consejo.
+Al final, entrega el reporte en un bloque de código."""
 
-st.title("🤖 Asistente de Reportes - Grupo 19 Paxtu")
+st.set_page_config(page_title="Asistente Grupo 19 Paxtu", page_icon="⚜️")
+st.title("🤖 Reporte de Sección - Grupo 19 Paxtu")
 
-# Configura tu API Key (La que sacaste de Google)
-os_api_key = st.sidebar.text_input("Introduce la API Key de Google", type="password")
-
-if os_api_key:
-    genai.configure(api_key=os_api_key)
+# --- MODIFICACIÓN PARA EL SECRET ---
+# Intentamos leer la API Key desde los secretos de Streamlit
+try:
+    api_key = st.secrets["GOOGLE_API_KEY"]
+    genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
-
+    
+    # Lógica del Chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -23,16 +25,21 @@ if os_api_key:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("Cuéntame sobre las actividades del mes..."):
+    if prompt := st.chat_input("Hola, ¿listo para el reporte del mes?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        response = model.generate_content(prompt)
-        full_response = response.text
+        # Iniciar chat con historial para que tenga memoria
+        chat = model.start_chat(history=[
+            {"role": "user", "parts": [m["content"]]} for m in st.session_state.messages[:-1]
+        ])
+        
+        response = chat.send_message(prompt)
         
         with st.chat_message("assistant"):
-            st.markdown(full_response)
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-else:
-    st.warning("Por favor, introduce tu API Key en la barra lateral para comenzar.")
+            st.markdown(response.text)
+        st.session_state.messages.append({"role": "assistant", "content": response.text})
+
+except KeyError:
+    st.error("Error: No se encontró la API Key en los Secretos de Streamlit. Por favor, configúrala.")
