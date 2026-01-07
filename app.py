@@ -1,44 +1,34 @@
 import streamlit as st
 import google.generativeai as genai
-from streamlit_mic_recorder import mic_recorder
 
 # --- 1. CONFIGURACIÓN DEL SISTEMA ---
 SYSTEM_PROMPT = """Actúa como el Asistente Digital de Sección del Grupo Scout 19 Paxtu. 
 
-FORMATO FINAL (ESTRICTO PARA WORD):
+FORMATO FINAL PARA WORD:
 1. TÍTULO: # GRUPO 19 PAXTU - REPORTE DE SECCIÓN [Sección]
 2. SUB-ENCABEZADO: **Mes: [Mes/Año]** **Elabora: [Nombre]**
 3. TABLAS: (Actividades, Membresía, Finanzas, Resumen Progresión, Detalle Progresión y Asuntos de Consejo).
 
 INSTRUCCIONES:
 - Pregunta sección, mes y responsable al inicio.
-- Si mencionan insignias en actividades, regístrala automáticamente.
-- NO uses bloques de código (cuadros grises)."""
+- NO uses cuadros grises (bloques de código)."""
 
 st.set_page_config(page_title="Reporte Paxtu 19", page_icon="⚜️")
 st.title("🤖 Asistente de Reportes - Grupo 19 Paxtu")
 
-# --- 2. BARRA LATERAL (GUÍA, EJEMPLO Y DICTADO) ---
+# --- 2. BARRA LATERAL (GUÍA Y EJEMPLO) ---
 with st.sidebar:
-    st.header("🎙️ Dictado por Voz")
-    st.write("Pulsa para hablar:")
-    # Capturamos el audio de forma segura
-    audio_data = mic_recorder(start_prompt="🔴 Iniciar Dictado", stop_prompt="⏹️ Enviar", key='recorder')
-    
-    st.divider()
     st.header("📋 Guía para el Scouter")
     st.markdown("""
-    **¿Cómo reportar?**
-    Escribe abajo o dicta aquí a la izquierda. No importa el orden.
+    **💡 Tip de Dictado:**
+    Si no quieres escribir, toca el cuadro de chat de abajo y usa el **micrófono de tu teclado** (en tu celular o con `Win+H` en PC). ¡Es mucho más rápido!
     
-    **Ejemplo de conversación:**
-    * *"Hola, reporte de Tropa de octubre, por Akela."*
-    * *"El día 12 acampamos en Potrero Chico. Fuimos 15 scouts."*
-    * *"Entregamos la insignia de 'Rastreador' a Daniel Garza."*
-    * *"Generar reporte."*
-
+    **Ejemplo de qué decir:**
+    > *"Soy Akela, reporte de Manada de Mayo. El día 10 fuimos a Chipinque con 15 lobatos. Entregamos un 'Rastreador' a Juan Pérez. Gastamos $200."*
+    
     ---
-    **Secciones:** Encabezado, Actividades, Membresía, Finanzas, Progresión y Consejo.
+    **Secciones del reporte:**
+    Encabezado, Actividades, Membresía, Finanzas, Progresión y Consejo.
     """)
     
     if st.button("🗑️ Nuevo Reporte"):
@@ -56,18 +46,8 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 4. LÓGICA DE ENTRADA (CORREGIDA) ---
-user_text = st.chat_input("Escribe los detalles aquí...")
-prompt = None
-
-# Verificamos si hubo entrada por voz (validando que no sea None)
-if audio_data and audio_data.get('text'):
-    prompt = audio_data['text']
-# Si no hay voz, revisamos si hubo entrada por texto
-elif user_text:
-    prompt = user_text
-
-if prompt:
+# --- 4. LÓGICA DE ENTRADA (SOLO TEXTO/DICTADO DE TECLADO) ---
+if prompt := st.chat_input("Escribe o dicta usando el teclado de tu celular..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
