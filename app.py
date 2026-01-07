@@ -67,9 +67,9 @@ if "GOOGLE_API_KEY" not in st.secrets:
 
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
-# Usamos el nombre del modelo que te funcionó (ajustar si es necesario)
+# NOTA: Cambia 'gemini-1.5-flash' por el nombre que te funcionó si el 404 regresa.
 model = genai.GenerativeModel(
-    model_name='gemini-2.5-flash', 
+    model_name='gemini-1.5-flash', 
     system_instruction=SYSTEM_PROMPT
 )
 
@@ -90,4 +90,20 @@ if prompt := st.chat_input("Escribe aquí los detalles del mes..."):
         st.markdown(prompt)
 
     try:
-        # Preparar historial para la
+        # Preparar historial para la API (ESTA PARTE TENÍA EL ERROR DE SANGRÍA)
+        history_google = []
+        for m in st.session_state.messages[:-1]:
+            role = "user" if m["role"] == "user" else "model"
+            history_google.append({"role": role, "parts": [m["content"]]})
+
+        # Iniciar chat con memoria de contexto
+        chat = model.start_chat(history=history_google)
+        response = chat.send_message(prompt)
+        
+        # Mostrar respuesta del asistente
+        with st.chat_message("assistant"):
+            st.markdown(response.text)
+        st.session_state.messages.append({"role": "assistant", "content": response.text})
+
+    except Exception as e:
+        st.error(f"Hubo un problema: {str(e)}")
