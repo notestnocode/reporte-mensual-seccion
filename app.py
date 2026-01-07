@@ -1,51 +1,51 @@
 import streamlit as st
 import google.generativeai as genai
-from google.generativeai.types import RequestOptions
 
 # Configuración del Sistema
-SYSTEM_PROMPT = """Actúa como el Asistente del Grupo 19 Paxtu. 
+SYSTEM_PROMPT = """Actúa como el Asistente Digital del Grupo Scout 19 Paxtu. 
 Tu objetivo es generar el Reporte Mensual mediante una charla. 
 Estructura el reporte en tablas de Markdown: Encabezado, Actividades, Membresía, Finanzas, Resumen Progresión, Detalle Progresión y Asuntos de Consejo."""
 
 st.set_page_config(page_title="Asistente Paxtu", page_icon="⚜️")
 st.title("🤖 Reporte de Sección - Grupo 19 Paxtu")
 
+# Verificación de la API Key en Secrets
 if "GOOGLE_API_KEY" not in st.secrets:
-    st.error("Configura GOOGLE_API_KEY en Secrets.")
+    st.error("Configura GOOGLE_API_KEY en los Secrets de Streamlit.")
     st.stop()
 
-# Configuración forzada
+# Configuración básica
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
-# Usamos una configuración de modelo más robusta
-model = genai.GenerativeModel(
-    model_name='gemini-1.5-flash',
-    system_instruction=SYSTEM_PROMPT
-)
+# Inicializar el modelo
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Mostrar el historial de chat
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("¿Listo para el reporte?"):
+# Entrada de texto
+if prompt := st.chat_input("¿Listo para empezar el reporte?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     try:
-        # Forzamos a la API a usar la versión estable v1 para evitar el error 404
-        response = model.generate_content(
-            prompt,
-            request_options=RequestOptions(api_version='v1')
-        )
+        # Enviamos el mensaje con el System Prompt incluido en cada llamado 
+        # para asegurar que no pierda su identidad
+        full_prompt = f"{SYSTEM_PROMPT}\n\nHistorial previo:\n"
+        for m in st.session_state.messages[-3:]: # Enviamos solo los últimos 3 mensajes para ahorrar espacio
+            full_prompt += f"{m['role']}: {m['content']}\n"
+        
+        response = model.generate_content(full_prompt)
         
         with st.chat_message("assistant"):
             st.markdown(response.text)
         st.session_state.messages.append({"role": "assistant", "content": response.text})
 
     except Exception as e:
-        st.error(f"Error detectado: {str(e)}")
-        st.info("Si el error persiste, genera una nueva API Key en Google AI Studio.")
+        st.error(f"Error: {str(e)}")
