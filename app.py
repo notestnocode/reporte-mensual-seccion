@@ -69,7 +69,7 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # NOTA: Cambia 'gemini-1.5-flash' por el nombre que te funcionó si el 404 regresa.
 model = genai.GenerativeModel(
-    model_name='gemini-1.5-flash', 
+    model_name='gemini-2.5-flash', 
     system_instruction=SYSTEM_PROMPT
 )
 
