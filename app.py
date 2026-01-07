@@ -82,4 +82,32 @@ for message in st.session_state.messages:
 # --- 6. INTERACCIÓN Y LÓGICA DE COPIADO ---
 if prompt := st.chat_input("Cuéntame sobre el mes de la sección..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    try:
+        history_google = []
+        for m in st.session_state.messages[:-1]:
+            role = "user" if m["role"] == "user" else "model"
+            history_google.append({"role": role, "parts": [m["content"]]})
+
+        chat = model.start_chat(history=history_google)
+        response = chat.send_message(prompt)
+        
+        with st.chat_message("assistant"):
+            # Mostramos la respuesta normal
+            st.markdown(response.text)
+            
+            # Si detectamos que es el reporte final, mostramos la herramienta de copiado
+            if "# GRUPO 19 PAXTU" in response.text:
+                st.info("⬆️ Reporte generado. Abajo tienes el formato para copiar:")
+                st.text_area(
+                    label="Selecciona todo (Ctrl+A), copia (Ctrl+C) y pega en Word:",
+                    value=response.text,
+                    height=300
+                )
+        
+        st.session_state.messages.append({"role": "assistant", "content": response.text})
+
+    except Exception as e:
+        st.error(f"Hubo un problema: {str(e)}")
