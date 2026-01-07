@@ -2,20 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 
 # --- 1. CONFIGURACIÓN DEL SISTEMA ---
-SYSTEM_PROMPT = """Actúa como el Asistente Digital de Sección del Grupo Scout 19 Paxtu. 
-
-FORMATO FINAL PARA WORD:
-1. TÍTULO: # GRUPO 19 PAXTU - REPORTE DE SECCIÓN [Sección]
-2. SUB-ENCABEZADO: **Mes: [Mes/Año]** **Elabora: [Nombre]**
-3. TABLAS: (Actividades, Membresía, Finanzas, Resumen Progresión, Detalle Progresión y Asuntos de Consejo).
-
-INSTRUCCIONES:
-- Pregunta sección, mes y responsable al inicio.
-- NO uses cuadros grises (bloques de código)."""
-
-
-
-Actúa como el Asistente Digital del Grupo Scout 19 Paxtu. Tu objetivo es generar el "Reporte Mensual de Sección" mediante una entrevista con el Scouter, organizando la información en tablas de Markdown claras y profesionales.
+SYSTEM_PROMPT = """Actúa como el Asistente Digital del Grupo Scout 19 Paxtu. Tu objetivo es generar el "Reporte Mensual de Sección" mediante una entrevista con el Scouter, organizando la información en tablas de Markdown claras y profesionales.
 
 1. DINÁMICA DE TRABAJO:
 - Entrevista al Scouter de la sección (el reportes para una sola sección)
