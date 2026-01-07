@@ -33,7 +33,7 @@ with st.sidebar:
 
 # --- CONEXIÓN API ---
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel(model_name='gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
+model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=SYSTEM_PROMPT)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
