@@ -69,7 +69,7 @@ if "GOOGLE_API_KEY" not in st.secrets:
     st.stop()
 
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel(model_name='gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
+model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=SYSTEM_PROMPT)
 
 # --- 5. GESTIÓN DEL HISTORIAL ---
 if "messages" not in st.session_state:
