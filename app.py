@@ -15,12 +15,17 @@ st.title("🤖 Reporte de Sección - Grupo 19 Paxtu")
 try:
     api_key = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
     
-    # Lógica del Chat
+    # CAMBIO AQUÍ: Usamos el nombre técnico completo 'models/gemini-1.5-flash'
+    model = genai.GenerativeModel(
+        model_name='models/gemini-1.5-flash', 
+        system_instruction=SYSTEM_PROMPT
+    )
+    
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # Dibujar historial
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -30,10 +35,13 @@ try:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Iniciar chat con historial para que tenga memoria
-        chat = model.start_chat(history=[
-            {"role": "user", "parts": [m["content"]]} for m in st.session_state.messages[:-1]
-        ])
+        # CAMBIO AQUÍ: Mejoramos el manejo del historial
+        history_google = []
+        for m in st.session_state.messages[:-1]:
+            role = "user" if m["role"] == "user" else "model" # Google usa 'model', no 'assistant'
+            history_google.append({"role": role, "parts": [m["content"]]})
+
+        chat = model.start_chat(history=history_google)
         
         response = chat.send_message(prompt)
         
@@ -41,5 +49,5 @@ try:
             st.markdown(response.text)
         st.session_state.messages.append({"role": "assistant", "content": response.text})
 
-except KeyError:
-    st.error("Error: No se encontró la API Key en los Secretos de Streamlit. Por favor, configúrala.")
+except Exception as e:
+    st.error(f"Hubo un error de configuración: {e}")
