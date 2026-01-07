@@ -17,7 +17,7 @@ ESTRUCTURA DEL REPORTE (Tablas Markdown):
 Al final, entrega el reporte en un bloque de código Markdown cuando el usuario diga 'Listo' o 'Generar'."""
 
 st.set_page_config(page_title="Asistente Grupo 19 Paxtu", page_icon="⚜️")
-st.title("🤖 Reporte de Sección - Grupo 19 Paxtu")
+st.title("🤖 Reporte de Sección - Grupo 19 Paxtu v0.0.14")
 
 # Configuración de API Key
 if "GOOGLE_API_KEY" not in st.secrets:
