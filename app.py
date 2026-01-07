@@ -1,77 +1,55 @@
 import streamlit as st
 import google.generativeai as genai
+from streamlit_mic_recorder import mic_recorder
 
-# --- 1. CONFIGURACIÓN DEL SISTEMA (PROMPT MAESTRO) ---
+# --- 1. CONFIGURACIÓN DEL SISTEMA ---
 SYSTEM_PROMPT = """Actúa como el Asistente Digital de Sección del Grupo Scout 19 Paxtu. 
 
-INSTRUCCIÓN DE FORMATO FINAL (ESTRICTA PARA WORD):
-Cuando el usuario pida 'Generar reporte', entrega el contenido así:
+FORMATO FINAL (ESTRICTO PARA WORD):
+1. TÍTULO: # GRUPO 19 PAXTU - REPORTE DE SECCIÓN [Sección]
+2. SUB-ENCABEZADO: **Mes: [Mes/Año]** **Elabora: [Nombre]**
+3. TABLAS: (Actividades, Membresía, Finanzas, Resumen Progresión, Detalle Progresión y Asuntos de Consejo).
 
-1. TÍTULO PRINCIPAL:
-# GRUPO 19 PAXTU - REPORTE DE SECCIÓN [Nombre de la Sección]
+INSTRUCCIONES:
+- Pregunta sección, mes y responsable al inicio.
+- Si mencionan insignias en actividades, regístralas en las tablas de progresión automáticamente.
+- NO uses bloques de código (cuadros grises)."""
 
-2. SUB-ENCABEZADO:
-**Mes: [Mes y Año]** **Elabora: [Nombre de la persona que elabora]**
-
-3. TABLAS (Markdown limpio, SIN cuadros grises/bloques de código):
-- ACTIVIDADES: (Fecha, Tipo, Asistencia, Descripción, Evaluación).
-- MEMBRESÍA: (Total, Registrados, Sin Registro, Altas/Bajas, Prospectos).
-- FINANZAS: (Concepto, Ingreso, Egreso, Saldo).
-- RESUMEN PROGRESIÓN: (Nombre de Insignia, Cantidad Total).
-- DETALLE PROGRESIÓN: (Tipo, Nombre Insignia, Fecha, Nombre/Tótem).
-- ASUNTOS CONSEJO: (Prioridad, Observación, Estatus).
-
-INSTRUCCIONES DE CONVERSACIÓN:
-- Pregunta primero: sección, mes/año y responsable.
-- Recolecta datos de forma natural.
-- NO uses bloques de código. Entrega el texto limpio para facilitar el copiado a Word."""
-
-# --- 2. CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Reporte Sección - Paxtu 19", page_icon="⚜️", layout="centered")
+st.set_page_config(page_title="Reporte Paxtu 19", page_icon="⚜️")
 st.title("🤖 Asistente de Reportes - Grupo 19 Paxtu")
-st.markdown("---")
 
-# --- 3. BARRA LATERAL (GUÍA COMPLETA RESTAURADA) ---
+# --- 2. BARRA LATERAL (GUÍA, EJEMPLO Y DICTADO) ---
 with st.sidebar:
-    st.header("📋 Guía para el Scouter")
-    st.markdown("""
-    **¿Cómo hablar con el bot?**
-    Cuéntale los detalles del mes como una plática. No importa el orden.
-    
-    **Ejemplo:**
-    > *"Soy Akela, reporte de Manada de Mayo. El día 10 fuimos a Chipinque con 15 lobatos. Entregamos un 'Rastreador' a Juan Pérez. Gastamos $200."*
-    
-    ---
-    **Secciones del reporte:**
-    1. **Encabezado** (Título y responsable)
-    2. **Actividades** (Fechas y evaluación)
-    3. **Membresía** (Altas y registros)
-    4. **Finanzas** (Caja chica)
-    5. **Resumen Progresión** (Conteos)
-    6. **Detalle Progresión** (Nombres/Etapas)
-    7. **Asuntos de Consejo** (Peticiones)
-    
-    ---
-    **Instrucciones de Copiado:**
-    1. Al terminar escribe: **'Generar reporte'**.
-    2. Aparecerá un cuadro de **'Copiado Rápido'** al final.
-    3. Copia ese texto y pégalo directamente en **Word**.
-    """)
+    st.header("🎙️ Dictado por Voz")
+    st.write("Pulsa para hablar:")
+    audio = mic_recorder(start_prompt="🔴 Iniciar Dictado", stop_prompt="⏹️ Enviar", key='recorder')
     
     st.divider()
-    if st.button("🗑️ Limpiar y Nuevo Reporte"):
+    st.header("📋 Guía para el Scouter")
+    st.markdown("""
+    **¿Cómo reportar?**
+    Puedes escribir o dictar los detalles del mes. No importa el orden, el bot organizará todo.
+    
+    **Ejemplo de conversación:**
+    * *"Hola, es el reporte de la Manada de octubre, lo hace Akela."*
+    * *"El día 12 tuvimos una acampada en Potrero Chico. Fuimos 15 scouts y 3 jefes. Estuvo excelente."*
+    * *"Ese mismo día le entregamos la insignia de 'Rastreador' a Daniel Garza."*
+    * *"Tuvimos un ingreso de $500 por cuotas y compramos piola por $150."*
+    * *"Por favor, genera el reporte."*
+
+    ---
+    **Secciones incluidas:**
+    Encabezado, Actividades, Membresía, Finanzas, Progresión y Consejo.
+    """)
+    
+    if st.button("🗑️ Nuevo Reporte"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 4. CONEXIÓN API ---
-if "GOOGLE_API_KEY" not in st.secrets:
-    st.error("Error: Configura 'GOOGLE_API_KEY' en los Secrets de Streamlit.")
-    st.stop()
-
+# --- 3. CONEXIÓN API ---
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=SYSTEM_PROMPT)
+model = genai.GenerativeModel(model_name='gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
 
-# --- 5. GESTIÓN DEL HISTORIAL ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -79,13 +57,17 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. INTERACCIÓN Y LÓGICA DE COPIADO ---
-if prompt := st.chat_input("Cuéntame sobre el mes de la sección..."):
+# --- 4. LÓGICA DE ENTRADA ---
+user_input = st.chat_input("Escribe los detalles aquí...")
+prompt = audio['text'] if audio else user_input
+
+if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     try:
+        # Preparar historial
         history_google = []
         for m in st.session_state.messages[:-1]:
             role = "user" if m["role"] == "user" else "model"
@@ -95,19 +77,12 @@ if prompt := st.chat_input("Cuéntame sobre el mes de la sección..."):
         response = chat.send_message(prompt)
         
         with st.chat_message("assistant"):
-            # Mostramos la respuesta normal
             st.markdown(response.text)
-            
-            # Si detectamos que es el reporte final, mostramos la herramienta de copiado
+            # Herramienta de copiado si es el reporte final
             if "# GRUPO 19 PAXTU" in response.text:
-                st.info("⬆️ Reporte generado. Abajo tienes el formato para copiar:")
-                st.text_area(
-                    label="Selecciona todo (Ctrl+A), copia (Ctrl+C) y pega en Word:",
-                    value=response.text,
-                    height=300
-                )
-        
+                st.info("⬆️ Reporte detectado. Usa el cuadro de abajo para copiarlo todo:")
+                st.text_area("Copiado rápido (Ctrl+A, Ctrl+C):", value=response.text, height=300)
+                
         st.session_state.messages.append({"role": "assistant", "content": response.text})
-
     except Exception as e:
-        st.error(f"Hubo un problema: {str(e)}")
+        st.error(f"Error: {str(e)}")
