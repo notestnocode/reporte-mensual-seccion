@@ -50,12 +50,12 @@ VII. ASUNTOS PARA LLEVAR A CONSEJO
 | :--- | :--- | :--- |
 
 3. REGLAS CRÍTICAS:
-- NO uses bloques de código (fondo gris/backticks). Entrega el texto y las tablas directamente en el chat para que mantengan el formato al copiar.
+- NO uses bloques de código (fondo gris/backticks). Entrega el texto y las tablas directamente en el chat.
 - No inventes datos. Si tienes duda pregunta discretamente. Si una tabla no tiene información, llénala con "Sin movimientos este mes".
 - Si se menciona una entrega de insignia en la narrativa, regístrala automáticamente en las dos tablas de Progresión.
-- Usa fuentes en negrita y títulos claros para que Word los reconozca al pegar."""
+- Usa fuentes en negrita y títulos claros."""
 
-# --- FUNCIONES DE APOYO PARA WORD ---
+# --- FUNCIONES PARA WORD (TABLAS MORADAS) ---
 def set_cell_background(cell, color):
     shading_elm = OxmlElement('w:shd')
     shading_elm.set(qn('w:fill'), color)
@@ -64,7 +64,6 @@ def set_cell_background(cell, color):
 def generar_docx(texto_reporte):
     doc = Document()
     MORADO_SCOUT = "4A267A" 
-    
     lineas = texto_reporte.split('\n')
     i = 0
     while i < len(lineas):
@@ -72,14 +71,12 @@ def generar_docx(texto_reporte):
         if not linea:
             i += 1
             continue
-            
         if linea.startswith('# '):
             doc.add_heading(linea.replace('# ', ''), level=1)
         elif linea.startswith('|') and i + 1 < len(lineas) and '| :---' in lineas[i+1]:
             columnas = [c.strip() for c in linea.split('|') if c.strip()]
             tabla = doc.add_table(rows=1, cols=len(columnas))
             tabla.style = 'Table Grid'
-            
             hdr_cells = tabla.rows[0].cells
             for idx, col_name in enumerate(columnas):
                 hdr_cells[idx].text = col_name
@@ -87,7 +84,6 @@ def generar_docx(texto_reporte):
                 run = hdr_cells[idx].paragraphs[0].runs[0]
                 run.font.color.rgb = RGBColor(255, 255, 255)
                 run.bold = True
-            
             i += 2
             while i < len(lineas) and lineas[i].strip().startswith('|'):
                 datos = [d.strip() for d in lineas[i].split('|') if d.strip()]
@@ -101,24 +97,28 @@ def generar_docx(texto_reporte):
         else:
             doc.add_paragraph(linea)
         i += 1
-
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer
 
-# --- 2. CONFIGURACIÓN DE PÁGINA ---
+# --- 2. CONFIGURACIÓN DE PÁGINA E INICIALIZACIÓN ---
 st.set_page_config(page_title="Reporte Paxtu 19", page_icon="⚜️")
 st.title("🤖 Asistente de Reportes - Grupo 19 Paxtu")
 
-# --- 3. BARRA LATERAL (TODOS LOS DETALLES RESTAURADOS) ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "reporte_listo" not in st.session_state:
+    st.session_state.reporte_listo = False
+if "ultimo_reporte" not in st.session_state:
+    st.session_state.ultimo_reporte = ""
+
+# --- 3. BARRA LATERAL ---
 with st.sidebar:
     st.header("📋 Guía para el Scouter")
-    
     st.markdown("""
     **💡 Tip de Dictado:**
-    Toca el cuadro de chat de abajo y usa el **micrófono de tu teclado** (Gboard o iOS). ¡Es mucho más rápido narrar que escribir!
-    
+    Usa el **micrófono de tu teclado** en el celular. ¡Es mucho más rápido!
     ---
     **🗣️ Ejemplo de cómo hablar:**
     > *"Soy Baloo, reporte de Manada de octubre. El día 12 fuimos al parque con 10 lobatos. Le entregamos la insignia de 'Rastreador' a Juan Pérez. Gastamos $150 en dulces."*
@@ -141,15 +141,15 @@ with st.sidebar:
     st.divider()
     if st.button("🗑️ Nuevo Reporte"):
         st.session_state.messages = []
+        st.session_state.reporte_listo = False
+        st.session_state.ultimo_reporte = ""
         st.rerun()
 
 # --- 4. CONEXIÓN API ---
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=SYSTEM_PROMPT)
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
+# Mostrar historial
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
@@ -167,17 +167,26 @@ if prompt := st.chat_input("Cuéntame sobre el mes de la sección..."):
         
         with st.chat_message("assistant"):
             st.markdown(response.text)
-            
-            if "# REPORTE DE SECCIÓN" in response.text:
-                archivo_word = generar_docx(response.text)
-                st.download_button(
-                    label="📥 Descargar Reporte para Word (.docx)",
-                    data=archivo_word,
-                    file_name="Reporte_Paxtu19.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
+            # Detección flexible del reporte
+            if "# GRUPO 19 PAXTU" in response.text or "| Fecha |" in response.text:
+                st.session_state.reporte_listo = True
+                st.session_state.ultimo_reporte = response.text
         
         st.session_state.messages.append({"role": "assistant", "content": response.text})
+        st.rerun() # Forzamos recarga para que el botón aparezca inmediatamente
 
     except Exception as e:
         st.error(f"Error: {str(e)}")
+
+# --- 6. MOSTRAR BOTÓN DE DESCARGA (PERSISTENTE) ---
+if st.session_state.reporte_listo:
+    st.divider()
+    st.success("✅ ¡Reporte detectado! Ya puedes descargarlo.")
+    archivo_word = generar_docx(st.session_state.ultimo_reporte)
+    st.download_button(
+        label="📥 Descargar Reporte para Word (.docx)",
+        data=archivo_word,
+        file_name="Reporte_Paxtu19.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        key="btn_descarga"
+    )
