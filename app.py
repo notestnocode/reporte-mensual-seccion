@@ -168,7 +168,7 @@ if prompt := st.chat_input("Cuéntame sobre el mes de la sección..."):
         with st.chat_message("assistant"):
             st.markdown(response.text)
             
-            if "# GRUPO 19 PAXTU" in response.text:
+            if "# REPORTE DE SECCIÓN" in response.text:
                 archivo_word = generar_docx(response.text)
                 st.download_button(
                     label="📥 Descargar Reporte para Word (.docx)",
