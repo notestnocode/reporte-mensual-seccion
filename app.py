@@ -18,34 +18,39 @@ SYSTEM_PROMPT = """Actúa como el Asistente Digital del Grupo Scout 19 Paxtu. Tu
 
 2.1 TITULO
 # GRUPO 19 PAXTU - REPORTE DE SECCIÓN [Sección]
-**Mes: [Mes/Año]** **Elabora: [Nombre]**
+## Mes: [Mes/Año] Elabora: [Nombre]
 
 2.2 ACTIVIDADES REALIZADAS
+### ACTIVIDADES
 | Fecha | Tipo de Actividad | Asistencia (Jovenes/Adultos) | Descripción | Evaluación |
 | :--- | :--- | :--- | :--- | :--- |
 
 2.3. MEMBRESÍA
+### MEMBRESÍA
 | Total Miembros | Registrados | Prospectos | Altas | Bajas |
 | :--- | :--- | :--- | :--- | :--- |
 - **Lista de Altas:** [Nombres]
 - **Lista de Bajas:** [Nombres]
 
 IV. FINANZAS (CAJA CHICA)
-- **Saldo Inicial:** [Monto]
-- **Saldo Final:** [Monto]
-- **Total Ingresos:** [Monto]
-- **Total Egresos:** [Monto]
-- **Detalle de movimientos:** [Lista]
+### FINANZAS
+| Saldo Inicial | Total Ingresos | Total Egresos | Saldo Final |
+| :--- | :--- | :--- | :--- |
+### Detalle de movimientos:
+[Lista]
 
 V. RESUMEN DE PROGRESIÓN (CONTEO)
+### PROGRESIONES ENTREGADAS
 | Nombre de la Insignia | Cantidad Total |
 | :--- | :--- |
 
 VI. DETALLE DE PROGRESIÓN (INDIVIDUAL)
+### PROGRESIONES PERSONALES
 | Tipo de Insignia | Nombre de la Insignia | Fecha de Entrega | Nombre del Joven |
 | :--- | :--- | :--- | :--- |
 
 VII. ASUNTOS PARA LLEVAR A CONSEJO
+### PUNTOS Y ACUERDOS PARA PRESENTAR EN CONSEJO
 | Prioridad | Observación / Solicitud | Estatus |
 | :--- | :--- | :--- |
 
