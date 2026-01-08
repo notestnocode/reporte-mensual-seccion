@@ -60,7 +60,7 @@ VII. ASUNTOS PARA LLEVAR A CONSEJO
 - Si se menciona una entrega de insignia en la narrativa, regístrala automáticamente en las dos tablas de Progresión.
 - Usa fuentes en negrita y títulos claros."""
 
-# --- FUNCIONES PARA WORD (TABLAS MORADAS) ---
+# --- FUNCIONES PARA WORD (TABLAS MORADAS Y ENCABEZADOS) ---
 def set_cell_background(cell, color):
     shading_elm = OxmlElement('w:shd')
     shading_elm.set(qn('w:fill'), color)
@@ -68,20 +68,40 @@ def set_cell_background(cell, color):
 
 def generar_docx(texto_reporte):
     doc = Document()
-    MORADO_SCOUT = "4A267A" 
+    
+    # Colores
+    AZUL_PAXTU = RGBColor(31, 73, 125)
+    MORADO_SCOUT = "4A267A"
+    
     lineas = texto_reporte.split('\n')
     i = 0
     while i < len(lineas):
-        linea = lineas[i].strip()
+        linea = linea_original = lineas[i].strip()
         if not linea:
             i += 1
             continue
+
+        # --- MANEJO DE ENCABEZADOS POR NIVELES ---
         if linea.startswith('# '):
-            doc.add_heading(linea.replace('# ', ''), level=1)
+            # Título Nivel 1 (Azul)
+            encabezado = doc.add_heading('', level=1)
+            run = encabezado.add_run(linea.replace('# ', ''))
+            run.font.color.rgb = AZUL_PAXTU
+            
+        elif linea.startswith('## '):
+            # Título Nivel 2
+            doc.add_heading(linea.replace('## ', ''), level=2)
+            
+        elif linea.startswith('### '):
+            # Título Nivel 3
+            doc.add_heading(linea.replace('### ', ''), level=3)
+
+        # --- MANEJO DE TABLAS ---
         elif linea.startswith('|') and i + 1 < len(lineas) and '| :---' in lineas[i+1]:
             columnas = [c.strip() for c in linea.split('|') if c.strip()]
             tabla = doc.add_table(rows=1, cols=len(columnas))
             tabla.style = 'Table Grid'
+            
             hdr_cells = tabla.rows[0].cells
             for idx, col_name in enumerate(columnas):
                 hdr_cells[idx].text = col_name
@@ -89,7 +109,8 @@ def generar_docx(texto_reporte):
                 run = hdr_cells[idx].paragraphs[0].runs[0]
                 run.font.color.rgb = RGBColor(255, 255, 255)
                 run.bold = True
-            i += 2
+            
+            i += 2  # Saltar la línea de formato | :--- |
             while i < len(lineas) and lineas[i].strip().startswith('|'):
                 datos = [d.strip() for d in lineas[i].split('|') if d.strip()]
                 if datos:
@@ -99,9 +120,15 @@ def generar_docx(texto_reporte):
                             row_cells[idx].text = valor
                 i += 1
             continue
+            
+        # --- TEXTO NORMAL ---
         else:
-            doc.add_paragraph(linea)
+            # Limpiamos posibles residuos de markdown para el párrafo normal
+            texto_limpio = linea.replace('**', '').replace('__', '')
+            doc.add_paragraph(texto_limpio)
+        
         i += 1
+        
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
@@ -127,7 +154,7 @@ with st.sidebar:
     ---
     **🗣️ Ejemplo de cómo hablar:**
     > *"Soy Baloo, reporte de Manada de octubre. El día 12 fuimos al parque con 10 lobatos. Le entregamos la insignia de 'Rastreador' a Juan Pérez. Gastamos $150 en dulces."*
-    
+     
     ---
     **Secciones que incluye tu reporte:**
     1. **Encabezado:** Título y responsable.
@@ -137,7 +164,7 @@ with st.sidebar:
     5. **Resumen Progresión:** Conteo total.
     6. **Detalle Progresión:** Quién recibió qué.
     7. **Asuntos de Consejo:** Avisos para el Grupo.
-    
+     
     ---
     **Proceso:**
     Confirma los datos cuando el bot te dé el resumen y descarga tu Word con tablas en morado.
@@ -178,7 +205,7 @@ if prompt := st.chat_input("Cuéntame sobre el mes de la sección..."):
                 st.session_state.ultimo_reporte = response.text
         
         st.session_state.messages.append({"role": "assistant", "content": response.text})
-        st.rerun() # Forzamos recarga para que el botón aparezca inmediatamente
+        st.rerun() 
 
     except Exception as e:
         st.error(f"Error: {str(e)}")
